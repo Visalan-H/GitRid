@@ -66,19 +66,19 @@ exports.githubCallback = async (req, res) => {
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
-        if (process.env.NODE_ENV === 'development') {
-            return res.json({
-                success: true,
-                user: {
-                    id: user._id,
-                    username: user.username,
-                    email: user.email,
-                    avatarUrl: user.avatarUrl
-                },
-                token,
-                message: 'Authentication successful! JWT cookie set.'
-            });
-        }
+        // if (process.env.NODE_ENV === 'development') {
+        //     return res.json({
+        //         success: true,
+        //         user: {
+        //             id: user._id,
+        //             username: user.username,
+        //             email: user.email,
+        //             avatarUrl: user.avatarUrl
+        //         },
+        //         token,
+        //         message: 'Authentication successful! JWT cookie set.'
+        //     });
+        // }
 
         res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     } catch (error) {
