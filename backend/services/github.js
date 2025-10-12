@@ -4,7 +4,7 @@ const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const CALLBACK_URL = process.env.GITHUB_CALLBACK_URL;
 
-const fetchAllRepos = async (accessToken) => {
+const fetchAllRepositories = async (accessToken) => {
     const repos = [];
     let page = 1;
     let hasMore = true;
@@ -103,7 +103,7 @@ const generateAuthUrl = (state) => {
 };
 
 module.exports = {
-    fetchAllRepos,
+    fetchAllRepositories,
     deleteRepository,
     getUserProfile,
     exchangeCodeForToken,

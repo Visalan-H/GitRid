@@ -10,7 +10,7 @@ exports.githubAuthUrl = (req, res) => {
     res.cookie('oauth_state', state, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 600000
     });
 
@@ -25,6 +25,7 @@ exports.githubCallback = async (req, res) => {
     res.clearCookie('oauth_state');
 
     if (!state || state !== storedState || !code) {
+        // console.log(state,code,storedState);
         return res.status(400).json({ error: 'Invalid state or code parameter' });
     }
 
@@ -62,7 +63,7 @@ exports.githubCallback = async (req, res) => {
         res.cookie('jwt', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
         if (process.env.NODE_ENV === 'development') {
@@ -88,14 +89,7 @@ exports.githubCallback = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
     try {
-        const token = req.cookies.jwt;
-        if (!token) {
-            return res.status(401).json({ error: 'Not authenticated' });
-        }
-
-        const decoded = verifyToken(token);
-        const user = await User.findById(decoded.userId);
-
+        const user = req.user;
         if (!user) {
             return res.status(401).json({ error: 'User not found' });
         }

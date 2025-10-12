@@ -1,10 +1,9 @@
 const router = require('express').Router();
-const { getAllRepos } = require('../controllers/repoController');
+const { getAllRepositories, deleteRepositories } = require('../controllers/repoController');
 const authenticateToken = require('../middleware/auth');
 
+router.get('/all', authenticateToken, getAllRepositories);
 
-
-router.get('/all', authenticateToken, getAllRepos);
-
+router.delete('/delete', authenticateToken, deleteRepositories);
 
 module.exports = router;
