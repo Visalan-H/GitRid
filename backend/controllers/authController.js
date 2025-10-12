@@ -1,12 +1,8 @@
-const axios = require('axios');
-
 const User = require('../models/User');
 const { generateToken, verifyToken } = require('../services/jwt');
 const { generateRandomString } = require('../services/crypto');
+const { generateAuthUrl, exchangeCodeForToken, getUserProfile } = require('../services/github');
 
-const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const CALLBACK_URL = process.env.GITHUB_CALLBACK_URL;
 
 exports.githubAuthUrl = (req, res) => {
     const state = generateRandomString(16);
@@ -18,13 +14,9 @@ exports.githubAuthUrl = (req, res) => {
         maxAge: 600000
     });
 
-    const authUrl = new URL('https://github.com/login/oauth/authorize');
-    authUrl.searchParams.set('client_id', CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', CALLBACK_URL);
-    authUrl.searchParams.set('scope', 'repo,delete_repo,user:email');
-    authUrl.searchParams.set('state', state);
+    const authUrl = generateAuthUrl(state);
 
-    res.redirect(authUrl.toString());
+    res.redirect(authUrl);
 }
 
 exports.githubCallback = async (req, res) => {
@@ -38,31 +30,13 @@ exports.githubCallback = async (req, res) => {
 
     try {
         // exchange code for access token
-        const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
-            code,
-            redirect_uri: CALLBACK_URL,
-            state
-        }, {
-            headers: {
-                Accept: 'application/json'
-            }
-        });
+        const accessToken = await exchangeCodeForToken(code);
 
-        const { access_token } = tokenResponse.data;
-
-        if (!access_token) {
+        if (!accessToken) {
             return res.status(400).json({ error: 'Failed to obtain access token' });
         }
 
-        const userResponse = await axios.get('https://api.github.com/user', {
-            headers: {
-                Authorization: `Bearer ${access_token}`
-            }
-        });
-
-        const githubUser = userResponse.data;
+        const githubUser = await getUserProfile(accessToken);
 
         let user = await User.findOne({ githubId: githubUser.id });
 
@@ -72,11 +46,11 @@ exports.githubCallback = async (req, res) => {
                 username: githubUser.login,
                 email: githubUser.email,
                 avatarUrl: githubUser.avatar_url,
-                accessToken: access_token
+                accessToken: accessToken,
             });
         } else {
             // they might have changed these details on GitHub between logins
-            user.accessToken = access_token;
+            user.accessToken = accessToken;
             user.username = githubUser.login;
             user.avatarUrl = githubUser.avatar_url;
             user.email = githubUser.email;

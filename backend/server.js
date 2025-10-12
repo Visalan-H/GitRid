@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/authRoutes');
+const repoRouter = require('./routes/repoRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +17,8 @@ app.get('/api', (req, res) => {
     res.send('Hello, world!');
 });
 app.use('/api/auth', authRouter);
+app.use('/api/repo', repoRouter);
+
 
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
