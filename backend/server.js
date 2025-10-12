@@ -10,10 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-}));
+app.use(
+    cors({
+        origin: process.env.FRONTEND_URL,
+        credentials: true,
+    })
+);
 app.use(cookieParser());
 
 app.get('/api', (req, res) => {
@@ -22,8 +24,8 @@ app.get('/api', (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/repo', repoRouter);
 
-
-mongoose.connect(process.env.MONGODB_URI)
+mongoose
+    .connect(process.env.MONGODB_URI)
     .then(() => {
         app.listen(PORT, () => {
             console.log(`Server is running on http://localhost:${PORT}`);

@@ -3,7 +3,6 @@ const { generateToken, verifyToken } = require('../services/jwt');
 const { generateRandomString } = require('../services/crypto');
 const { generateAuthUrl, exchangeCodeForToken, getUserProfile } = require('../services/github');
 
-
 exports.githubAuthUrl = (req, res) => {
     const state = generateRandomString(16);
 
@@ -11,13 +10,13 @@ exports.githubAuthUrl = (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 600000
+        maxAge: 600000,
     });
 
     const authUrl = generateAuthUrl(state);
 
     res.redirect(authUrl);
-}
+};
 
 exports.githubCallback = async (req, res) => {
     const { code, state } = req.query;
@@ -64,7 +63,7 @@ exports.githubCallback = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         // if (process.env.NODE_ENV === 'development') {
         //     return res.json({
@@ -100,7 +99,7 @@ exports.getCurrentUser = async (req, res) => {
             username: user.username,
             email: user.email,
             avatarUrl: user.avatarUrl,
-            deletedRepoCount: user.deletedRepoCount
+            deletedRepoCount: user.deletedRepoCount,
         });
     } catch (error) {
         res.status(401).json({ error: 'Invalid token' });
