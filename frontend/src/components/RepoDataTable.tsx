@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Repository } from '@/pages/Repositories';
+import { toast } from 'sonner';
 
 interface DataTableProps {
     columns: ColumnDef<Repository>[];
@@ -42,7 +43,16 @@ export function RepoDataTable({ columns, data, onSelectionChange }: DataTablePro
         getFilteredRowModel: getFilteredRowModel(),
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
-        onRowSelectionChange: setRowSelection,
+        onRowSelectionChange: updater => {
+            const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
+            const selectedCount = Object.keys(newSelection).filter(key => newSelection[key]).length;
+
+            if (selectedCount > 50) {
+                toast.error('Maximum 50 repositories can be selected at once');
+                return;
+            }
+            setRowSelection(newSelection);
+        },
         state: {
             sorting,
             columnFilters,
@@ -57,37 +67,40 @@ export function RepoDataTable({ columns, data, onSelectionChange }: DataTablePro
     }, [rowSelection, onSelectionChange, table]);
 
     return (
-        <div>
+        <div className="w-full">
             {/* Filter */}
             <div className="flex items-center py-4 gap-4">
                 <Input
-                    placeholder="Filter repositories..."
+                    placeholder="Search repositories..."
                     value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
                     onChange={event => table.getColumn('name')?.setFilterValue(event.target.value)}
-                    className="max-w-sm bg-[#0a0a0a] border-[#ededed]/20 text-[#ededed] placeholder:text-[#ededed]/40"
+                    className="max-w-sm bg-black border-[#ededed]/20 text-[#ededed] placeholder:text-[#ededed]/40 focus-visible:ring-[#ededed]/30"
                 />
                 {table.getFilteredSelectedRowModel().rows.length > 0 && (
                     <div className="text-sm text-[#ededed]/60">
                         {table.getFilteredSelectedRowModel().rows.length} of{' '}
                         {table.getFilteredRowModel().rows.length} row(s) selected
                         {table.getFilteredSelectedRowModel().rows.length > 50 && (
-                            <span className="text-red-500 ml-2">(Max 50 allowed)</span>
+                            <span className="text-red-500 ml-2 font-medium">(Max 50 allowed)</span>
                         )}
                     </div>
                 )}
             </div>
 
             {/* Table */}
-            <div className="rounded-lg border border-[#ededed]/10 overflow-hidden">
+            <div className="rounded-lg border border-[#ededed]/10 overflow-hidden bg-black">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map(headerGroup => (
                             <TableRow
                                 key={headerGroup.id}
-                                className="border-[#ededed]/10 hover:bg-[#0a0a0a]"
+                                className="border-[#ededed]/10 hover:bg-[#ededed]/5"
                             >
                                 {headerGroup.headers.map(header => (
-                                    <TableHead key={header.id} className="text-[#ededed]/80">
+                                    <TableHead
+                                        key={header.id}
+                                        className="text-[#ededed]/80 font-semibold bg-[#ededed]/5"
+                                    >
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(
@@ -105,7 +118,7 @@ export function RepoDataTable({ columns, data, onSelectionChange }: DataTablePro
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && 'selected'}
-                                    className="border-[#ededed]/10 hover:bg-[#0a0a0a]"
+                                    className="border-[#ededed]/10 hover:bg-[#ededed]/5 data-[state=selected]:bg-[#ededed]/10"
                                 >
                                     {row.getVisibleCells().map(cell => (
                                         <TableCell key={cell.id} className="text-[#ededed]">
@@ -138,7 +151,7 @@ export function RepoDataTable({ columns, data, onSelectionChange }: DataTablePro
                     size="sm"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
-                    className="border-[#ededed]/20 text-[#ededed] hover:bg-[#ededed]/10"
+                    className="bg-black border-[#ededed]/20 text-[#ededed] hover:bg-[#ededed]/10 hover:text-[#ededed] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Previous
                 </Button>
@@ -147,7 +160,7 @@ export function RepoDataTable({ columns, data, onSelectionChange }: DataTablePro
                     size="sm"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
-                    className="border-[#ededed]/20 text-[#ededed] hover:bg-[#ededed]/10"
+                    className="bg-black border-[#ededed]/20 text-[#ededed] hover:bg-[#ededed]/10 hover:text-[#ededed] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Next
                 </Button>

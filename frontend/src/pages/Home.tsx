@@ -22,7 +22,7 @@ export default function Home() {
                             GitRid
                         </h1>
                         <p className="text-[#ededed]/70 text-lg md:text-xl font-medium max-w-xl mx-auto">
-                            Bulk delete GitHub repositories in seconds
+                            Get rid of Multiple GitHub repositories in a single click.
                         </p>
                     </div>
 

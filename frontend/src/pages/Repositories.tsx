@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { RepoDataTable } from '@/components/RepoDataTable';
 import { columns } from '@/components/RepoColumns';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,14 +21,14 @@ import { toast } from 'sonner';
 export interface Repository {
     id: number;
     name: string;
-    full_name: string;
+    fullName: string;
     private: boolean;
     description: string | null;
-    html_url: string;
+    url: string;
     language: string | null;
-    stargazers_count: number;
-    forks_count: number;
-    updated_at: string;
+    stars: number;
+    forks: number;
+    updatedAt: string;
 }
 
 export default function Repositories() {
@@ -36,6 +37,8 @@ export default function Repositories() {
     const [selectedRepos, setSelectedRepos] = useState<Repository[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+    const [tableKey, setTableKey] = useState(0);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -58,12 +61,18 @@ export default function Repositories() {
             return;
         }
 
+        if (confirmText !== 'delete my repos') {
+            toast.error('Please type "delete my repos" to confirm');
+            return;
+        }
+
         setIsDeleting(true);
         setShowConfirm(false);
+        setConfirmText('');
 
         try {
             const repoNames = selectedRepos.map(r => r.name);
-            const response = await axios.delete('http://localhost:3000/api/repos/bulk', {
+            const response = await axios.delete('http://localhost:3000/api/repo/delete', {
                 data: { repoNames },
                 withCredentials: true,
             });
@@ -76,8 +85,10 @@ export default function Repositories() {
 
             setRepos(repos.filter(r => !repoNames.includes(r.name)));
             setSelectedRepos([]);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to delete repositories');
+            setTableKey(prev => prev + 1); // Force table to reset
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || 'Failed to delete repositories');
         } finally {
             setIsDeleting(false);
         }
@@ -86,82 +97,125 @@ export default function Repositories() {
     if (loading) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="text-[#ededed]">Loading repositories...</div>
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-8 w-8 text-[#ededed] animate-spin" />
+                    <p className="text-[#ededed]/60 text-lg">Loading repositories...</p>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="min-h-screen bg-black">
-            <div className="container mx-auto px-4 py-8">
-                <div className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => navigate('/dashboard')}
-                            className="text-[#ededed] hover:bg-[#ededed]/10"
-                        >
-                            <ArrowLeft />
-                        </Button>
-                        <h1 className="text-3xl font-bold text-[#ededed]">
-                            Repositories ({repos.length})
-                        </h1>
+            <div className="container mx-auto px-4 py-10">
+                <div className="rounded-lg bg-black border border-[#ededed]/10 p-8">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => navigate('/dashboard')}
+                                className="text-[#ededed] hover:bg-[#ededed]/10"
+                            >
+                                <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-2xl font-bold text-[#ededed]">
+                                    Repositories ({repos.length})
+                                </h1>
+                            </div>
+                        </div>
+
+                        {selectedRepos.length > 0 && (
+                            <Button
+                                onClick={() => setShowConfirm(true)}
+                                disabled={isDeleting}
+                                className="bg-red-600 hover:bg-red-700 text-[#ededed] font-medium flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                            >
+                                {isDeleting ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                )}
+                                Delete {selectedRepos.length} Selected
+                                {selectedRepos.length > 50 && (
+                                    <span className="ml-2 text-[#ededed]">(Max 50)</span>
+                                )}
+                            </Button>
+                        )}
                     </div>
 
-                    {selectedRepos.length > 0 && (
-                        <Button
-                            onClick={() => setShowConfirm(true)}
-                            disabled={isDeleting}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete {selectedRepos.length} Selected
-                            {selectedRepos.length > 50 && ' (Max 50)'}
-                        </Button>
-                    )}
+                    <RepoDataTable
+                        key={tableKey}
+                        columns={columns}
+                        data={repos}
+                        onSelectionChange={setSelectedRepos}
+                    />
+
+                    <AlertDialog
+                        open={showConfirm}
+                        onOpenChange={open => {
+                            setShowConfirm(open);
+                            if (!open) setConfirmText('');
+                        }}
+                    >
+                        <AlertDialogContent className="bg-[#0a0a0a] border border-[#ededed]/10">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="text-[#ededed] text-xl font-bold">
+                                    Delete {selectedRepos.length} repositories?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-[#ededed]/60">
+                                    This action cannot be undone. The following repositories will be
+                                    permanently deleted:
+                                    <div className="mt-4 max-h-40 overflow-y-auto rounded-lg bg-black p-4 border border-[#ededed]/10">
+                                        <ul className="list-disc list-inside text-sm space-y-1">
+                                            {selectedRepos.slice(0, 10).map(repo => (
+                                                <li key={repo.id} className="text-[#ededed]/70">
+                                                    {repo.fullName}
+                                                </li>
+                                            ))}
+                                            {selectedRepos.length > 10 && (
+                                                <li className="text-[#ededed]/50">
+                                                    ...and {selectedRepos.length - 10} more
+                                                </li>
+                                            )}
+                                        </ul>
+                                    </div>
+                                    <div className="mt-6 space-y-2">
+                                        <p className="text-sm font-medium text-[#ededed]">
+                                            Type{' '}
+                                            <span className="font-mono bg-[#ededed]/10 px-2 py-0.5 rounded text-red-400">
+                                                delete my repos
+                                            </span>{' '}
+                                            to confirm:
+                                        </p>
+                                        <Input
+                                            value={confirmText}
+                                            onChange={e => setConfirmText(e.target.value)}
+                                            className="bg-black border-[#ededed]/20 text-[#ededed] placeholder:text-[#ededed]/40"
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="gap-2">
+                                <AlertDialogCancel
+                                    className="bg-black border border-[#ededed]/20 text-[#ededed] hover:bg-[#ededed]/10 hover:text-[#ededed] cursor-pointer focus-visible:ring-[#ededed]/30"
+                                    onClick={() => setConfirmText('')}
+                                >
+                                    Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleDelete}
+                                    disabled={confirmText !== 'delete my repos'}
+                                    className="bg-red-600 hover:bg-red-700 text-[#ededed] hover:text-[#ededed] cursor-pointer border-0 focus-visible:ring-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Delete
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
-
-                <RepoDataTable
-                    columns={columns}
-                    data={repos}
-                    onSelectionChange={setSelectedRepos}
-                />
-
-                <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-                    <AlertDialogContent className="bg-[#0a0a0a] border-[#ededed]/10">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="text-[#ededed]">
-                                Delete {selectedRepos.length} repositories?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="text-[#ededed]/60">
-                                This action cannot be undone. The following repositories will be
-                                permanently deleted:
-                                <div className="mt-4 max-h-40 overflow-y-auto">
-                                    <ul className="list-disc list-inside text-sm">
-                                        {selectedRepos.slice(0, 10).map(repo => (
-                                            <li key={repo.id}>{repo.full_name}</li>
-                                        ))}
-                                        {selectedRepos.length > 10 && (
-                                            <li>...and {selectedRepos.length - 10} more</li>
-                                        )}
-                                    </ul>
-                                </div>
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel className="border-[#ededed]/20 text-[#ededed]">
-                                Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleDelete}
-                                className="bg-red-600 hover:bg-red-700"
-                            >
-                                Delete
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </div>
         </div>
     );
