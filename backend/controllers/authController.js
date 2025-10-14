@@ -19,7 +19,12 @@ exports.githubAuthUrl = (req, res) => {
 };
 
 exports.githubCallback = async (req, res) => {
-    const { code, state } = req.query;
+    const { code, state, error } = req.query;
+    if (error) {
+        return res.redirect(
+            `${process.env.FRONTEND_URL}/?error=Error while signing in with GitHub`
+        );
+    }
     const storedState = req.cookies['oauth_state'];
     res.clearCookie('oauth_state');
 
@@ -82,7 +87,9 @@ exports.githubCallback = async (req, res) => {
         res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     } catch (error) {
         console.error('Error during GitHub OAuth callback:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.redirect(
+            `${process.env.FRONTEND_URL}/?error=Internal server error during GitHub sign-in`
+        );
     }
 };
 

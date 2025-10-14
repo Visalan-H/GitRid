@@ -43,7 +43,7 @@ export default function Repositories() {
 
     useEffect(() => {
         axios
-            .get('http://localhost:3000/api/repo/all', { withCredentials: true })
+            .get(`${import.meta.env.VITE_API_URL}/api/repo/all`, { withCredentials: true })
             .then(res => {
                 setRepos(res.data.repos || res.data);
                 setLoading(false);
@@ -72,7 +72,7 @@ export default function Repositories() {
 
         try {
             const repoNames = selectedRepos.map(r => r.name);
-            const response = await axios.delete('http://localhost:3000/api/repo/delete', {
+            const response = await axios.delete(`${import.meta.env.VITE_API_URL}/api/repo/delete`, {
                 data: { repoNames },
                 withCredentials: true,
             });
@@ -115,7 +115,7 @@ export default function Repositories() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => navigate('/dashboard')}
-                                className="text-[#ededed] hover:bg-[#ededed]/10"
+                                className="bg-black border-[#ededed]/20 text-[#ededed] hover:bg-[#ededed]/10 hover:text-[#ededed]"
                             >
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>

@@ -19,7 +19,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         axios
-            .get('http://localhost:3000/api/auth/me', { withCredentials: true })
+            .get(`${import.meta.env.VITE_API_URL}/api/auth/me`, { withCredentials: true })
             .then(res => {
                 setUser(res.data);
                 setLoading(false);
@@ -30,7 +30,11 @@ export default function Dashboard() {
     }, [navigate]);
 
     const handleLogout = async () => {
-        await axios.post('http://localhost:3000/api/auth/logout', {}, { withCredentials: true });
+        await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/auth/logout`,
+            {},
+            { withCredentials: true }
+        );
         navigate('/');
     };
 
@@ -50,7 +54,7 @@ export default function Dashboard() {
                     <Button
                         variant="ghost"
                         onClick={handleLogout}
-                        className="text-[#ededed] hover:bg-[#ededed]/10 cursor-pointer"
+                        className="bg-black border-[#ededed]/20 text-[#ededed] hover:bg-[#ededed]/10 hover:text-[#ededed]cursor-pointer"
                     >
                         <LogOut className="mr-2 h-4 w-4" />
                         Logout

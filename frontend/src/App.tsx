@@ -7,12 +7,12 @@ import { Toaster } from '@/components/ui/sonner';
 function App() {
     return (
         <BrowserRouter>
+            <Toaster position="top-center" />
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/repos" element={<Repositories />} />
             </Routes>
-            <Toaster />
         </BrowserRouter>
     );
 }
