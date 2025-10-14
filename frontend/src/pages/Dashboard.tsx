@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { GitBranch, LogOut } from 'lucide-react';
+import { BookMarked, LogOut } from 'lucide-react';
 
 interface User {
     username: string;
@@ -49,7 +49,6 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-black flex items-center justify-center">
             <div className="container mx-auto px-4 max-w-2xl">
-                {/* Logout Button - Top Right */}
                 <div className="absolute top-6 right-6">
                     <Button
                         variant="ghost"
@@ -61,9 +60,7 @@ export default function Dashboard() {
                     </Button>
                 </div>
 
-                {/* Main Content - Centered */}
                 <div className="space-y-12">
-                    {/* Profile Section */}
                     <div className="text-center space-y-6">
                         <Avatar className="h-24 w-24 mx-auto border-2 border-[#ededed]/30">
                             <AvatarImage src={user?.avatarUrl} />
@@ -79,7 +76,6 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Stats Section */}
                     <div className="border-t border-b border-[#ededed]/10 py-8">
                         <div className="flex items-center justify-center gap-3">
                             <div className="text-center">
@@ -93,14 +89,13 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Action Button */}
                     <div className="space-y-4">
                         <Button
                             size="lg"
                             onClick={() => navigate('/repos')}
-                            className="w-full bg-[#ededed] text-black hover:bg-[#ededed]/90 h-14 text-lg font-semibold cursor-pointer"
+                            className="w-full bg-[#ededed] text-black hover:bg-[#ededed]/90 h-14 hover:scale-[0.975] transition-transform-[0.3s] text-lg font-semibold cursor-pointer"
                         >
-                            <GitBranch className="mr-2 h-5 w-5" />
+                            <BookMarked className="mr-2 h-5 w-5" />
                             Manage Repositories
                         </Button>
                     </div>
