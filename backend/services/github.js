@@ -1,10 +1,12 @@
 const axios = require('axios');
+const { decrypt } = require('./crypto');
 
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const CALLBACK_URL = process.env.GITHUB_CALLBACK_URL;
 
 const fetchAllRepositories = async accessToken => {
+    const decryptedToken = decrypt(accessToken);
     const repos = [];
     let page = 1;
     let hasMore = true;
@@ -18,7 +20,7 @@ const fetchAllRepositories = async accessToken => {
                 sort: 'updated',
             },
             headers: {
-                Authorization: `Bearer ${accessToken}`,
+                Authorization: `Bearer ${decryptedToken}`,
                 Accept: 'application/vnd.github+json',
             },
         });
@@ -52,18 +54,22 @@ const fetchAllRepositories = async accessToken => {
 };
 
 const deleteRepository = async (username, repoName, accessToken) => {
+    const decryptedToken = decrypt(accessToken);
+
     await axios.delete(`https://api.github.com/repos/${username}/${repoName}`, {
         headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${decryptedToken}`,
             Accept: 'application/vnd.github+json',
         },
     });
 };
 
 const getUserProfile = async accessToken => {
+    const decryptedToken = decrypt(accessToken);
+
     const response = await axios.get('https://api.github.com/user', {
         headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${decryptedToken}`,
             Accept: 'application/vnd.github+json',
         },
     });

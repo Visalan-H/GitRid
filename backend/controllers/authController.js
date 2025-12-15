@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const { generateToken, verifyToken } = require('../services/jwt');
-const { generateRandomString } = require('../services/crypto');
+const { generateRandomString, encrypt } = require('../services/crypto');
 const { generateAuthUrl, exchangeCodeForToken, getUserProfile } = require('../services/github');
 
 exports.githubAuthUrl = (req, res) => {
@@ -51,11 +51,11 @@ exports.githubCallback = async (req, res) => {
                 username: githubUser.login,
                 email: githubUser.email,
                 avatarUrl: githubUser.avatar_url,
-                accessToken: accessToken,
+                accessToken: encrypt(accessToken),
             });
         } else {
             // they might have changed these details on GitHub between logins
-            user.accessToken = accessToken;
+            user.accessToken = encrypt(accessToken);
             user.username = githubUser.login;
             user.avatarUrl = githubUser.avatar_url;
             user.email = githubUser.email;
