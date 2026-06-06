@@ -1,6 +1,4 @@
 const crypto = require('crypto');
-const dotenv = require('dotenv');
-dotenv.config();
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 const ENCRYPTION_SALT = process.env.ENCRYPTION_SALT || 'default_salt_change_this';

@@ -104,9 +104,25 @@ const generateAuthUrl = state => {
     return authUrl.toString();
 };
 
+const makeRepositoryPrivate = async (username, repoName, accessToken) => {
+    const decryptedToken = decrypt(accessToken);
+
+    await axios.patch(
+        `https://api.github.com/repos/${username}/${repoName}`,
+        { private: true },
+        {
+            headers: {
+                Authorization: `Bearer ${decryptedToken}`,
+                Accept: 'application/vnd.github+json',
+            },
+        }
+    );
+};
+
 module.exports = {
     fetchAllRepositories,
     deleteRepository,
+    makeRepositoryPrivate,
     getUserProfile,
     exchangeCodeForToken,
     generateAuthUrl,

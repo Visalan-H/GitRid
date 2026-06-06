@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RepoDataTable } from '@/components/RepoDataTable';
 import { columns } from '@/components/RepoColumns';
-import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, Lock } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -36,7 +36,9 @@ export default function Repositories() {
     const [loading, setLoading] = useState(true);
     const [selectedRepos, setSelectedRepos] = useState<Repository[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isMakingPrivate, setIsMakingPrivate] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showPrivateConfirm, setShowPrivateConfirm] = useState(false);
     const [confirmText, setConfirmText] = useState('');
     const [tableKey, setTableKey] = useState(0);
     const navigate = useNavigate();
@@ -53,6 +55,52 @@ export default function Repositories() {
                 navigate('/dashboard');
             });
     }, [navigate]);
+
+    const handleMakePrivate = async () => {
+        if (selectedRepos.length === 0) return;
+        if (selectedRepos.length > 50) {
+            toast.error('You can only update up to 50 repositories at once');
+            return;
+        }
+
+        const publicRepos = selectedRepos.filter(r => !r.private);
+        if (publicRepos.length === 0) {
+            toast.info('All selected repositories are already private');
+            setShowPrivateConfirm(false);
+            return;
+        }
+
+        setIsMakingPrivate(true);
+        setShowPrivateConfirm(false);
+
+        try {
+            const repoNames = publicRepos.map(r => r.name);
+            const response = await axios.patch(
+                `${import.meta.env.VITE_API_URL}/api/repo/visibility`,
+                { repoNames },
+                { withCredentials: true }
+            );
+
+            const { summary } = response.data;
+
+            toast.success(
+                `Made ${summary.successful} of ${summary.total} repositories private`
+            );
+
+            setRepos(prev =>
+                prev.map(r =>
+                    repoNames.includes(r.name) ? { ...r, private: true } : r
+                )
+            );
+            setSelectedRepos([]);
+            setTableKey(prev => prev + 1);
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || 'Failed to make repositories private');
+        } finally {
+            setIsMakingPrivate(false);
+        }
+    };
 
     const handleDelete = async () => {
         if (selectedRepos.length === 0) return;
@@ -127,21 +175,35 @@ export default function Repositories() {
                         </div>
 
                         {selectedRepos.length > 0 && (
-                            <Button
-                                onClick={() => setShowConfirm(true)}
-                                disabled={isDeleting}
-                                className="bg-red-600 hover:bg-red-700 text-[#ededed] font-medium flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-                            >
-                                {isDeleting ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                )}
-                                Delete {selectedRepos.length} Selected
-                                {selectedRepos.length > 50 && (
-                                    <span className="ml-2 text-[#ededed]">(Max 50)</span>
-                                )}
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    onClick={() => setShowPrivateConfirm(true)}
+                                    disabled={isMakingPrivate || isDeleting}
+                                    className="bg-yellow-600 hover:bg-yellow-700 text-[#ededed] font-medium flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isMakingPrivate ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Lock className="mr-2 h-4 w-4" />
+                                    )}
+                                    Make {selectedRepos.length} Private
+                                </Button>
+                                <Button
+                                    onClick={() => setShowConfirm(true)}
+                                    disabled={isDeleting || isMakingPrivate}
+                                    className="bg-red-600 hover:bg-red-700 text-[#ededed] font-medium flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isDeleting ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                    )}
+                                    Delete {selectedRepos.length} Selected
+                                    {selectedRepos.length > 50 && (
+                                        <span className="ml-2 text-[#ededed]">(Max 50)</span>
+                                    )}
+                                </Button>
+                            </div>
                         )}
                     </div>
 
@@ -151,6 +213,48 @@ export default function Repositories() {
                         data={repos}
                         onSelectionChange={setSelectedRepos}
                     />
+
+                    <AlertDialog
+                        open={showPrivateConfirm}
+                        onOpenChange={setShowPrivateConfirm}
+                    >
+                        <AlertDialogContent className="bg-[#0a0a0a] border border-[#ededed]/10">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="text-[#ededed] text-xl font-bold">
+                                    Make {selectedRepos.length} repositories private?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-[#ededed]/60">
+                                    The following repositories will be set to private. This can be
+                                    undone on GitHub.
+                                    <div className="mt-4 max-h-40 overflow-y-auto rounded-lg bg-black p-4 border border-[#ededed]/10">
+                                        <ul className="list-disc list-inside text-sm space-y-1">
+                                            {selectedRepos.slice(0, 10).map(repo => (
+                                                <li key={repo.id} className="text-[#ededed]/70">
+                                                    {repo.fullName}
+                                                </li>
+                                            ))}
+                                            {selectedRepos.length > 10 && (
+                                                <li className="text-[#ededed]/50">
+                                                    ...and {selectedRepos.length - 10} more
+                                                </li>
+                                            )}
+                                        </ul>
+                                    </div>
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="gap-2">
+                                <AlertDialogCancel className="bg-black border border-[#ededed]/20 text-[#ededed] hover:bg-[#ededed]/10 hover:text-[#ededed] cursor-pointer focus-visible:ring-[#ededed]/30">
+                                    Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleMakePrivate}
+                                    className="bg-yellow-600 hover:bg-yellow-700 text-[#ededed] cursor-pointer border-0 focus-visible:ring-yellow-500/30"
+                                >
+                                    Make Private
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
 
                     <AlertDialog
                         open={showConfirm}

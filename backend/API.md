@@ -8,17 +8,18 @@ All authenticated endpoints require a valid JWT token stored in an HTTP-only coo
 
 ### Get GitHub OAuth URL
 
-Returns the GitHub authorization URL for initiating OAuth flow.
+Initiates the GitHub OAuth flow by redirecting the browser to GitHub's authorization page.
 
 **Endpoint:** `GET /api/auth/github/url`
 
 **Response:**
 
-```json
-{
-    "url": "https://github.com/login/oauth/authorize?client_id=..."
-}
+Redirects the browser directly to:
 ```
+https://github.com/login/oauth/authorize?client_id=...&scope=...&state=...
+```
+
+This endpoint sets an `oauth_state` HTTP-only cookie for CSRF protection and then issues a `302` redirect. It is intended to be called via `window.location.href`, not via `fetch`/`axios`.
 
 ### GitHub OAuth Callback
 
@@ -60,7 +61,7 @@ Clears the authentication session.
 
 **Endpoint:** `POST /api/auth/logout`
 
-**Authentication:** Required
+**Authentication:** Not required (safe to call even with an invalid or missing token)
 
 **Response:**
 
@@ -101,6 +102,43 @@ Retrieves all repositories owned by the authenticated user.
             "size": 2048
         }
     ]
+}
+```
+
+### Make Repositories Private
+
+Sets multiple repositories to private in bulk.
+
+**Endpoint:** `PATCH /api/repo/visibility`
+
+**Authentication:** Required
+
+**Request Body:**
+
+```json
+{
+    "repoNames": ["repo1", "repo2"]
+}
+```
+
+**Constraints:**
+
+- Maximum 50 repositories per request
+- Only repositories owned by the authenticated user can be updated
+
+**Response:**
+
+```json
+{
+    "results": [
+        { "repo": "repo1", "success": true },
+        { "repo": "repo2", "success": false, "error": "Not Found" }
+    ],
+    "summary": {
+        "total": 2,
+        "successful": 1,
+        "failed": 1
+    }
 }
 ```
 
@@ -179,4 +217,4 @@ All endpoints may return the following error responses:
 
 ## Rate Limiting
 
-The API processes repository deletions in batches of 10 to avoid hitting GitHub API rate limits.
+The API processes repository operations in batches of 10 to avoid hitting GitHub API rate limits. This applies to both bulk deletions and bulk visibility updates.

@@ -43,7 +43,7 @@ export default function Dashboard() {
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="text-[#ededed]/60 text-lg">Loading...</div>
             </div>
-        );
+        );  
     }
 
     return (

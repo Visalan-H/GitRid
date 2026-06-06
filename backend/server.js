@@ -5,6 +5,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/authRoutes');
 const repoRouter = require('./routes/repoRoutes');
+const dns = require('dns');
+dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
