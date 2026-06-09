@@ -11,6 +11,7 @@ exports.githubAuthUrl = (req, res) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 600000,
+        path: '/',
     });
 
     const authUrl = generateAuthUrl(state);
@@ -26,11 +27,12 @@ exports.githubCallback = async (req, res) => {
         );
     }
     const storedState = req.cookies['oauth_state'];
-    res.clearCookie('oauth_state');
+    res.clearCookie('oauth_state', { path: '/' });
 
     if (!state || state !== storedState || !code) {
-        // console.log(state,code,storedState);
-        return res.status(400).json({ error: 'Invalid state or code parameter' });
+        return res.redirect(
+            `${process.env.FRONTEND_URL}/?error=Invalid state or code parameter`
+        );
     }
 
     try {
@@ -38,7 +40,9 @@ exports.githubCallback = async (req, res) => {
         const accessToken = await exchangeCodeForToken(code);
 
         if (!accessToken) {
-            return res.status(400).json({ error: 'Failed to obtain access token' });
+            return res.redirect(
+                `${process.env.FRONTEND_URL}/?error=Failed to obtain access token`
+            );
         }
 
         const githubUser = await getUserProfile(accessToken);
@@ -97,19 +101,17 @@ exports.getCurrentUser = async (req, res) => {
     try {
         const user = req.user;
         if (!user) {
-            return res.status(401).json({ error: 'User not found' });
+            return res.status(401).json({ message: 'User not found' });
         }
 
         res.json({
-            id: user._id,
-            githubId: user.githubId,
             username: user.username,
             email: user.email,
             avatarUrl: user.avatarUrl,
             deletedRepoCount: user.deletedRepoCount,
         });
     } catch (error) {
-        res.status(401).json({ error: 'Invalid token' });
+        res.status(401).json({ message: 'Invalid token' });
     }
 };
 
@@ -118,7 +120,6 @@ exports.logoutUser = (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.json({ message: 'Logged out successfully' });
 };

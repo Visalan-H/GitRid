@@ -1,4 +1,4 @@
-const { fetchAllRepositories, deleteRepository, makeRepositoryPrivate } = require('../services/github');
+const { fetchAllRepositories, deleteRepository, makeRepositoryPrivate, makeRepositoryPublic } = require('../services/github');
 
 exports.getAllRepositories = async (req, res) => {
     try {
@@ -81,6 +81,49 @@ exports.deleteRepositories = async (req, res) => {
     }
 };
 
+const buildVisibilityResults = async (repoNames, user, serviceFunc) => {
+    const BATCH_SIZE = 10;
+    const results = [];
+
+    for (let i = 0; i < repoNames.length; i += BATCH_SIZE) {
+        const batch = repoNames.slice(i, i + BATCH_SIZE);
+
+        const batchResults = await Promise.allSettled(
+            batch.map(repoName =>
+                serviceFunc(user.username, repoName, user.accessToken).then(() => ({
+                    repo: repoName,
+                    success: true,
+                }))
+            )
+        );
+
+        const processedResults = batchResults.map((result, index) => {
+            if (result.status === 'fulfilled') {
+                return result.value;
+            } else {
+                const ghErrors = result.reason?.response?.data?.errors;
+                const ghDetail =
+                    Array.isArray(ghErrors) && ghErrors.length > 0
+                        ? ghErrors.map(e => e.message || e.code || JSON.stringify(e)).join('; ')
+                        : null;
+                const topMessage =
+                    result.reason?.response?.data?.message ||
+                    result.reason?.message ||
+                    'Unknown error';
+                return {
+                    repo: batch[index],
+                    success: false,
+                    error: ghDetail ? `${topMessage}: ${ghDetail}` : topMessage,
+                };
+            }
+        });
+
+        results.push(...processedResults);
+    }
+
+    return results;
+};
+
 exports.makeRepositoriesPrivate = async (req, res) => {
     try {
         const user = req.user;
@@ -96,39 +139,38 @@ exports.makeRepositoriesPrivate = async (req, res) => {
             });
         }
 
-        const BATCH_SIZE = 10;
-        const results = [];
+        const results = await buildVisibilityResults(repoNames, user, makeRepositoryPrivate);
+        const successCount = results.filter(r => r.success).length;
 
-        for (let i = 0; i < repoNames.length; i += BATCH_SIZE) {
-            const batch = repoNames.slice(i, i + BATCH_SIZE);
+        res.json({
+            results,
+            summary: {
+                total: repoNames.length,
+                successful: successCount,
+                failed: repoNames.length - successCount,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
-            const batchResults = await Promise.allSettled(
-                batch.map(repoName =>
-                    makeRepositoryPrivate(user.username, repoName, user.accessToken).then(() => ({
-                        repo: repoName,
-                        success: true,
-                    }))
-                )
-            );
+exports.makeRepositoriesPublic = async (req, res) => {
+    try {
+        const user = req.user;
+        const { repoNames } = req.body;
 
-            const processedResults = batchResults.map((result, index) => {
-                if (result.status === 'fulfilled') {
-                    return result.value;
-                } else {
-                    return {
-                        repo: batch[index],
-                        success: false,
-                        error:
-                            result.reason?.response?.data?.message ||
-                            result.reason?.message ||
-                            'Unknown error',
-                    };
-                }
-            });
-
-            results.push(...processedResults);
+        if (!Array.isArray(repoNames) || repoNames.length === 0) {
+            return res.status(400).json({ message: 'Invalid repository names' });
         }
 
+        if (repoNames.length > 50) {
+            return res.status(400).json({
+                message: 'Cannot update more than 50 repositories at once',
+            });
+        }
+
+        const results = await buildVisibilityResults(repoNames, user, makeRepositoryPublic);
         const successCount = results.filter(r => r.success).length;
 
         res.json({

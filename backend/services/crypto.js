@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-const ENCRYPTION_SALT = process.env.ENCRYPTION_SALT || 'default_salt_change_this';
+const ENCRYPTION_SALT = process.env.ENCRYPTION_SALT;
 const ALGORITHM = 'aes-256-cbc';
 
 if (!ENCRYPTION_KEY) {

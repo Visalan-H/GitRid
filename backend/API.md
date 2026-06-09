@@ -142,6 +142,43 @@ Sets multiple repositories to private in bulk.
 }
 ```
 
+### Make Repositories Public
+
+Sets multiple repositories to public in bulk.
+
+**Endpoint:** `PATCH /api/repo/visibility/public`
+
+**Authentication:** Required
+
+**Request Body:**
+
+```json
+{
+    "repoNames": ["repo1", "repo2"]
+}
+```
+
+**Constraints:**
+
+- Maximum 50 repositories per request
+- Only repositories owned by the authenticated user can be updated
+
+**Response:**
+
+```json
+{
+    "results": [
+        { "repo": "repo1", "success": true },
+        { "repo": "repo2", "success": false, "error": "Not Found" }
+    ],
+    "summary": {
+        "total": 2,
+        "successful": 1,
+        "failed": 1
+    }
+}
+```
+
 ### Delete Repositories
 
 Deletes multiple repositories in bulk.
