@@ -49,7 +49,7 @@ export default function Repositories() {
     const [pendingPublicRepos, setPendingPublicRepos] = useState<Repository[]>([]);
     const [tableKey, setTableKey] = useState(0);
     const navigate = useNavigate();
-    const { theme, toggleTheme } = useTheme();
+    const { theme, toggleThemeFromPoint } = useTheme();
 
     useEffect(() => {
         axios
@@ -286,7 +286,7 @@ export default function Repositories() {
                             </>
                         )}
                         <button
-                            onClick={toggleTheme}
+                            onClick={(e) => toggleThemeFromPoint(e.clientX, e.clientY)}
                             className="p-2 rounded-md text-[var(--app-fg-muted)] hover:text-[var(--app-fg)] hover:bg-[var(--app-fg-subtle)] transition-colors"
                             aria-label="Toggle theme"
                         >

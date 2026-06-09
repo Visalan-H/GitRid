@@ -366,6 +366,28 @@ export function RepoDataTable({ columns, data, onSelectionChange }: DataTablePro
                 <span className="text-sm" style={{ color: 'var(--app-fg-muted)' }}>
                     Page {currentPage + 1} of {totalPages || 1}
                 </span>
+                <span className="text-sm" style={{ color: 'var(--app-fg-muted)' }}>
+                    Built by{' '}
+                    <a
+                        href="https://visalan.me"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline transition-colors"
+                        style={{ color: 'var(--app-fg)' }}
+                    >
+                        Visalan H
+                    </a>
+                    ,{' '}
+                    <a
+                        href="https://roopak.vercel.app"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline transition-colors"
+                        style={{ color: 'var(--app-fg)' }}
+                    >
+                        Roopak CS
+                    </a>
+                </span>
                 <div className="flex items-center gap-2">
                     <Button
                         variant="outline"

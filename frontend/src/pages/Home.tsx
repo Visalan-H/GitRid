@@ -11,7 +11,7 @@ export default function Home() {
     const [isChecking, setIsChecking] = useState(true);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { theme, toggleTheme } = useTheme();
+    const { theme, toggleThemeFromPoint } = useTheme();
 
     const handleLogin = () => {
         window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/github/url`;
@@ -46,7 +46,7 @@ export default function Home() {
         <div className="h-full w-full relative overflow-hidden">
             {/* Theme toggle */}
             <button
-                onClick={toggleTheme}
+                onClick={(e) => toggleThemeFromPoint(e.clientX, e.clientY)}
                 className="absolute top-5 right-5 z-20 p-2 rounded-md text-[var(--app-fg-muted)] hover:text-[var(--app-fg)] hover:bg-[var(--app-fg-subtle)] transition-colors"
                 aria-label="Toggle theme"
             >
