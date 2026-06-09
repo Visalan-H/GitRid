@@ -27,7 +27,7 @@ const fetchAllRepositories = async accessToken => {
 
         const data = response.data;
 
-        if (data.length === 0) {
+        if (data.length === 0 || page > 100) {
             hasMore = false;
         } else {
             repos.push(
@@ -36,6 +36,7 @@ const fetchAllRepositories = async accessToken => {
                     name: repo.name,
                     fullName: repo.full_name,
                     private: repo.private,
+                    fork: repo.fork,
                     description: repo.description,
                     url: repo.html_url,
                     updatedAt: repo.updated_at,
@@ -104,9 +105,41 @@ const generateAuthUrl = state => {
     return authUrl.toString();
 };
 
+const makeRepositoryPrivate = async (username, repoName, accessToken) => {
+    const decryptedToken = decrypt(accessToken);
+
+    await axios.patch(
+        `https://api.github.com/repos/${username}/${repoName}`,
+        { private: true },
+        {
+            headers: {
+                Authorization: `Bearer ${decryptedToken}`,
+                Accept: 'application/vnd.github+json',
+            },
+        }
+    );
+};
+
+const makeRepositoryPublic = async (username, repoName, accessToken) => {
+    const decryptedToken = decrypt(accessToken);
+
+    await axios.patch(
+        `https://api.github.com/repos/${username}/${repoName}`,
+        { private: false },
+        {
+            headers: {
+                Authorization: `Bearer ${decryptedToken}`,
+                Accept: 'application/vnd.github+json',
+            },
+        }
+    );
+};
+
 module.exports = {
     fetchAllRepositories,
     deleteRepository,
+    makeRepositoryPrivate,
+    makeRepositoryPublic,
     getUserProfile,
     exchangeCodeForToken,
     generateAuthUrl,

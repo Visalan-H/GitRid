@@ -71,7 +71,9 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
         <td
             data-slot="table-cell"
             className={cn(
-                'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+                // Bug fix: removed `whitespace-nowrap` — it was inherited by all cell children,
+                // preventing description text from wrapping and making `line-clamp-2` a no-op.
+                'p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
                 className
             )}
             {...props}

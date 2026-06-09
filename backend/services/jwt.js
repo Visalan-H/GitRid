@@ -6,9 +6,5 @@ exports.generateToken = userId => {
 };
 
 exports.verifyToken = token => {
-    try {
-        return jwt.verify(token, JWT_SECRET);
-    } catch (err) {
-        return null;
-    }
+    return jwt.verify(token, JWT_SECRET);
 };
